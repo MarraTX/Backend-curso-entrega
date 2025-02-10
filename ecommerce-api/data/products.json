@@ -1,0 +1,30 @@
+[
+  {
+    "id": "5cb991ba-869e-44d3-bbcc-b4cb282384f6",
+    "title": "Smartphone XYZ",
+    "description": "Último modelo de smartphone",
+    "code": "PHONE-123",
+    "price": 899.99,
+    "status": true,
+    "stock": 45,
+    "category": "Electrónica",
+    "thumbnails": [
+      "img/phone1.jpg",
+      "img/phone2.jpg"
+    ]
+  },
+  {
+    "id": "100a959b-d826-4144-90ec-ac5ff23c53e9",
+    "title": "Iphone 16",
+    "description": "Último modelo de iphone",
+    "code": "PHONE-16",
+    "price": 999.99,
+    "status": true,
+    "stock": 20,
+    "category": "Electrónica",
+    "thumbnails": [
+      "img/phone1.jpg",
+      "img/phone2.jpg"
+    ]
+  }
+]
