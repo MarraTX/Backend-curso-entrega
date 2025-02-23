@@ -1,0 +1,35 @@
+<h1>Productos en Tiempo Real</h1>
+
+<form id="productForm">
+  <input type="text" id="title" placeholder="Título" required />
+  <input type="text" id="description" placeholder="Descripción" required />
+  <input type="text" id="code" placeholder="Código" required />
+  <input type="number" id="price" placeholder="Precio" required />
+  <input type="number" id="stock" placeholder="Stock" required />
+  <input type="text" id="category" placeholder="Categoría" required />
+  <button type="submit">Agregar Producto</button>
+</form>
+
+<div id="productList"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io(); const productForm =
+  document.getElementById('productForm'); const productList =
+  document.getElementById('productList'); productForm.addEventListener('submit',
+  (e) => { e.preventDefault(); const productData = { title:
+  document.getElementById('title').value, description:
+  document.getElementById('description').value, code:
+  document.getElementById('code').value, price:
+  Number(document.getElementById('price').value), stock:
+  Number(document.getElementById('stock').value), category:
+  document.getElementById('category').value }; socket.emit('newProduct',
+  productData); productForm.reset(); }); socket.on('products', (products) => {
+  productList.innerHTML = products.map(product => ` <div class="product">
+  <h2>${product.title}</h2> <p>${product.description}</p> <p>Precio:
+  $${product.price}</p> <p>Stock: ${product.stock}</p> <p>Categoría:
+  ${product.category}</p> <button
+  onclick="deleteProduct('${product.id}')">Eliminar</button> </div> `).join('');
+  }); function deleteProduct(id) { socket.emit('deleteProduct', id); }
+  socket.on('error', (error) => { alert(error); });
+</script>
