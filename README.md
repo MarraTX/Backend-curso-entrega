@@ -1,6 +1,6 @@
 # E-commerce API 🛍️
 
-API RESTful para la gestión de productos y carritos de compra, desarrollada con Node.js y Express.
+API RESTful para la gestión de productos y carritos de compra, desarrollada con Node.js, Express, Handlebars y WebSocket.
 
 ## 📋 Requisitos Previos
 
@@ -30,9 +30,16 @@ npm run dev
 
 El servidor estará corriendo en `http://localhost:8080`
 
-## 🔗 Endpoints
+## 🔗 Endpoints y Vistas
 
-### 📦 Productos
+### 🌐 Vistas con Handlebars
+
+| Ruta                | Descripción                        |
+| ------------------- | ---------------------------------- |
+| `/`                 | Vista estática de productos        |
+| `/realtimeproducts` | Vista en tiempo real con WebSocket |
+
+### 📦 Productos API
 
 | Método | Endpoint             | Descripción                 |
 | ------ | -------------------- | --------------------------- |
@@ -42,7 +49,7 @@ El servidor estará corriendo en `http://localhost:8080`
 | PUT    | `/api/products/:pid` | Actualizar producto por ID  |
 | DELETE | `/api/products/:pid` | Eliminar producto           |
 
-#### Ejemplo de body para crear producto:
+#### Ejemplo de body para crear un producto:
 
 ```json
 {
@@ -56,7 +63,7 @@ El servidor estará corriendo en `http://localhost:8080`
 }
 ```
 
-### 🛒 Carritos
+### 🛒 Carritos API
 
 | Método | Endpoint                       | Descripción                 |
 | ------ | ------------------------------ | --------------------------- |
@@ -71,6 +78,8 @@ ecommerce-api/
 ├── data/
 │   ├── products.json
 │   └── carts.json
+├── public/
+│   └── js/
 ├── src/
 │   ├── controllers/
 │   │   ├── productController.js
@@ -78,13 +87,70 @@ ecommerce-api/
 │   ├── models/
 │   ├── routes/
 │   │   ├── products.js
-│   │   └── carts.js
+│   │   ├── carts.js
+│   │   └── views.js
+│   ├── views/
+│   │   ├── layouts/
+│   │   │   └── main.handlebars
+│   │   ├── home.handlebars
+│   │   └── realTimeProducts.handlebars
 │   └── services/
 │       ├── productService.js
 │       └── cartService.js
 ├── index.js
 └── package.json
 ```
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Express.js** - Framework web
+- **Express Handlebars** - Motor de plantillas
+- **Socket.io** - Comunicación en tiempo real
+- **UUID** - Generación de IDs únicos
+- **Nodemon** - Desarrollo con recarga automática
+
+## 🔌 WebSocket
+
+El proyecto implementa WebSocket para actualizaciones en tiempo real en la vista `/realtimeproducts`. Los eventos disponibles son:
+
+- `connection` - Cliente conectado
+- `products` - Actualización de lista de productos
+- `newProduct` - Crear nuevo producto
+- `deleteProduct` - Eliminar producto
+- `error` - Manejo de errores
+
+### Ejemplo de uso con WebSocket:
+
+```javascript
+// Cliente
+const socket = io();
+
+// Escuchar actualizaciones de productos
+socket.on("products", (products) => {
+  // Actualizar UI
+});
+
+// Enviar nuevo producto
+socket.emit("newProduct", productData);
+
+// Eliminar producto
+socket.emit("deleteProduct", productId);
+```
+
+## 📝 Handlebars Views
+
+### Home View (`/`)
+
+Vista estática que muestra la lista de productos actual.
+
+### RealTime Products View (`/realtimeproducts`)
+
+Vista dinámica que incluye:
+
+- Lista de productos en tiempo real
+- Formulario para agregar productos
+- Botones para eliminar productos
+- Actualizaciones automáticas vía WebSocket
 
 ## 💾 Persistencia
 
@@ -100,38 +166,10 @@ Los datos se almacenan en archivos JSON:
 | `npm start`   | Inicia el servidor en modo producción          |
 | `npm run dev` | Inicia el servidor con nodemon para desarrollo |
 
-## 🛠️ Tecnologías Utilizadas
-
-- **Express.js** - Framework web
-- **UUID** - Generación de IDs únicos
-- **Nodemon** - Desarrollo con recarga automática
-
-## 📝 Ejemplos de Uso
-
-### Crear un Producto
-
-```bash
-curl -X POST http://localhost:8080/api/products \
--H "Content-Type: application/json" \
--d '{
-    "title": "Smartphone XYZ",
-    "description": "Último modelo",
-    "code": "PHONE-123",
-    "price": 999.99,
-    "stock": 100,
-    "category": "Electrónica",
-    "thumbnails": ["img/phone1.jpg"]
-}'
-```
-
-### Crear un Carrito
-
-```bash
-curl -X POST http://localhost:8080/api/carts
-```
-
 ## 📌 Notas
 
+- Las vistas se renderizan usando Handlebars
+- La vista `/realtimeproducts` se actualiza automáticamente mediante WebSocket
 - Todos los campos son obligatorios para crear un producto, excepto `thumbnails`
 - Los IDs se generan automáticamente usando UUID
 - El status de los productos es `true` por defecto
