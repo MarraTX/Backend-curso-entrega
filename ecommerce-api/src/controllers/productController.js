@@ -4,13 +4,30 @@ const productService = new ProductService();
 class ProductController {
   async getProducts(req, res) {
     try {
-      const { limit } = req.query;
-      const products = productService.getAllProducts(
-        limit ? parseInt(limit) : null
-      );
-      res.json(products);
+      const { limit, page, sort, category, status } = req.query;
+
+      const options = {
+        limit: limit ? parseInt(limit) : 10,
+        page: page ? parseInt(page) : 1,
+        sort,
+        query: {},
+      };
+
+      // Agregar filtros si existen
+      if (category) {
+        options.query.category = category;
+      }
+      if (status !== undefined) {
+        options.query.status = status === "true";
+      }
+
+      const result = await productService.getAllProducts(options);
+      res.json(result);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({
+        status: "error",
+        message: error.message,
+      });
     }
   }
 

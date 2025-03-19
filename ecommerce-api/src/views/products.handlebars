@@ -1,0 +1,62 @@
+<div class="products-container">
+  <h1>Productos</h1>
+
+  <div class="products-grid">
+    {{#each products}}
+      <div class="product-card">
+        <h2>{{this.title}}</h2>
+        <p class="price">${{this.price}}</p>
+        <p class="category">{{this.category}}</p>
+
+        {{! Botón para ver detalles }}
+        <a href="/products/{{this._id}}" class="btn-details">Ver Detalles</a>
+
+        {{! Botón para agregar al carrito directamente }}
+        <button onclick="addToCart('{{this._id}}')" class="btn-add-cart">
+          Agregar al Carrito
+        </button>
+      </div>
+    {{/each}}
+  </div>
+
+  {{! Paginación }}
+  <div class="pagination">
+    {{#if pagination.hasPrevPage}}
+      <a href="{{pagination.prevLink}}" class="page-link">&laquo; Anterior</a>
+    {{/if}}
+
+    <span class="current-page">Página {{pagination.page}}</span>
+
+    {{#if pagination.hasNextPage}}
+      <a href="{{pagination.nextLink}}" class="page-link">Siguiente &raquo;</a>
+    {{/if}}
+  </div>
+</div>
+
+<script>
+  async function addToCart(productId) { try { let cartId =
+  localStorage.getItem('cartId'); if (!cartId) { const cartResponse = await
+  fetch('/api/carts', { method: 'POST' }); if (!cartResponse.ok) { throw new
+  Error('Error al crear el carrito'); } const newCart = await
+  cartResponse.json(); cartId = newCart._id; localStorage.setItem('cartId',
+  cartId); } const response = await
+  fetch(`/api/carts/${cartId}/product/${productId}`, { method: 'POST' }); if
+  (response.ok) { alert('Producto agregado al carrito'); window.location.href =
+  `/carts/${cartId}`; } else { const error = await response.json(); throw new
+  Error(error.error || 'Error al agregar al carrito'); } } catch (error) {
+  alert('Error: ' + error.message); } }
+</script>
+
+<style>
+  .products-container { padding: 20px; } .products-grid { display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;
+  margin-bottom: 20px; } .product-card { border: 1px solid #ddd; padding: 15px;
+  border-radius: 8px; text-align: center; } .btn-details, .btn-add-cart {
+  display: inline-block; padding: 8px 16px; margin: 5px; border-radius: 4px;
+  text-decoration: none; cursor: pointer; } .btn-details { background-color:
+  #007bff; color: white; border: none; } .btn-add-cart { background-color:
+  #28a745; color: white; border: none; } .pagination { display: flex;
+  justify-content: center; align-items: center; gap: 10px; } .page-link {
+  padding: 8px 16px; background-color: #007bff; color: white; text-decoration:
+  none; border-radius: 4px; } .current-page { padding: 8px 16px; }
+</style>

@@ -1,0 +1,145 @@
+<div class="product-detail-container">
+  <div class="product-detail">
+    <h1>{{product.title}}</h1>
+    
+    <div class="product-info">
+      {{#if product.thumbnails.length}}
+        <div class="product-images">
+          {{#each product.thumbnails}}
+            <img src="{{this}}" alt="{{../product.title}}" class="product-image">
+          {{/each}}
+        </div>
+      {{/if}}
+      
+      <div class="product-details">
+        <p class="description">{{product.description}}</p>
+        <p class="price">Precio: ${{product.price}}</p>
+        <p class="category">Categoría: {{product.category}}</p>
+        <p class="stock">Stock disponible: {{product.stock}}</p>
+        <p class="code">Código: {{product.code}}</p>
+        
+        <button onclick="addToCart('{{product._id}}')" class="btn-add-cart">
+          Agregar al Carrito
+        </button>
+        
+        <a href="/products" class="btn-back">Volver a Productos</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function addToCart(productId) {
+    try {
+        let cartId = localStorage.getItem('cartId');
+        
+        if (!cartId) {
+            const cartResponse = await fetch('/api/carts', {
+                method: 'POST'
+            });
+            
+            if (!cartResponse.ok) {
+                throw new Error('Error al crear el carrito');
+            }
+            
+            const newCart = await cartResponse.json();
+            cartId = newCart._id;
+            localStorage.setItem('cartId', cartId);
+        }
+        
+        const response = await fetch(`/api/carts/${cartId}/product/${productId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            alert('Producto agregado al carrito');
+            window.location.href = `/carts/${cartId}`;
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al agregar al carrito');
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+</script>
+
+<style>
+.product-detail-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.product-detail {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.product-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.product-images {
+    display: grid;
+    gap: 10px;
+}
+
+.product-image {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    border-radius: 4px;
+}
+
+.product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.price {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.btn-add-cart, .btn-back {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    margin-top: 10px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-add-cart {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-back {
+    background-color: #6c757d;
+    color: white;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .product-info {
+        grid-template-columns: 1fr;
+    }
+}
+</style> 

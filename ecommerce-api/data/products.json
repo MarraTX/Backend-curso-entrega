@@ -26,5 +26,16 @@
       "img/phone1.jpg",
       "img/phone2.jpg"
     ]
+  },
+  {
+    "id": "c91f51f2-ccfa-4adf-8c14-9265c6948b2d",
+    "title": "aa",
+    "description": "a",
+    "code": "a",
+    "price": 2,
+    "status": true,
+    "stock": 2,
+    "category": "aa",
+    "thumbnails": []
   }
 ]

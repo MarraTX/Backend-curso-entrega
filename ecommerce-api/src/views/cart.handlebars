@@ -1,0 +1,196 @@
+<div class="cart-container">
+  <h1>Carrito de Compras</h1>
+  
+  {{log cart}}
+  {{log "Products length:" cart.products.length}}
+  
+  {{#if cart.products.length}}
+    <div class="cart-items">
+      {{#each cart.products}}
+        {{log this}}
+        <div class="cart-item">
+          <div class="item-info">
+            <h3>{{this.product.title}}</h3>
+            <p class="price">Precio: ${{this.product.price}}</p>
+            <p class="quantity">Cantidad: {{this.quantity}}</p>
+            <p class="subtotal">Subtotal: ${{multiply this.product.price this.quantity}}</p>
+          </div>
+          
+          <div class="item-actions">
+            <button onclick="updateQuantity('{{../cart._id}}', '{{this.product._id}}', {{add this.quantity 1}})" class="btn-quantity">+</button>
+            <button onclick="updateQuantity('{{../cart._id}}', '{{this.product._id}}', {{subtract this.quantity 1}})" class="btn-quantity">-</button>
+            <button onclick="removeProduct('{{../cart._id}}', '{{this.product._id}}')" class="btn-remove">Eliminar</button>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+    
+    <div class="cart-summary">
+      <h3>Total: ${{calculateTotal cart.products}}</h3>
+      <div class="cart-buttons">
+        <button onclick="clearCart('{{cart._id}}')" class="btn-clear">Vaciar Carrito</button>
+        <a href="/products" class="btn-continue">Seguir Comprando</a>
+        <button onclick="finalizarCompra('{{cart._id}}')" class="btn-checkout">Finalizar Compra</button>
+      </div>
+    </div>
+  {{else}}
+    <p>El carrito está vacío</p>
+    <p>Debug info:</p>
+    <pre>{{json cart}}</pre>
+    <a href="/products" class="btn-continue">Continuar Comprando</a>
+  {{/if}}
+</div>
+
+<style>
+.cart-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.cart-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-summary {
+    border-top: 2px solid #ddd;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.cart-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-quantity, .btn-remove, .btn-clear, .btn-continue, .btn-checkout {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-quantity {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-remove {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-clear {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-continue {
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-checkout {
+    background-color: #007bff;
+    color: white;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+</style>
+
+<script>
+  async function updateQuantity(cartId, productId, newQuantity) {
+    if (newQuantity < 1) return;
+    
+    try {
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: newQuantity })
+      });
+      
+      if (response.ok) {
+        location.reload();
+      }
+    } catch (error) {
+      alert('Error al actualizar cantidad');
+    }
+  }
+
+  async function removeProduct(cartId, productId) {
+    try {
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        location.reload();
+      }
+    } catch (error) {
+      alert('Error al eliminar producto');
+    }
+  }
+
+  async function clearCart(cartId) {
+    if (confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+      try {
+        const response = await fetch(`/api/carts/${cartId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          location.reload();
+        }
+      } catch (error) {
+        alert('Error al vaciar el carrito');
+      }
+    }
+  }
+
+  async function finalizarCompra(cartId) {
+    try {
+        if (confirm('¿Estás seguro de que deseas finalizar la compra?')) {
+            // Primero eliminamos el carrito de MongoDB
+            const response = await fetch(`/api/carts/${cartId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al procesar la compra');
+            }
+            
+            // Si la eliminación fue exitosa
+            alert('¡Compra realizada con éxito! Gracias por tu compra.');
+            
+            // Eliminamos el ID del carrito del localStorage
+            localStorage.removeItem('cartId');
+            
+            // Redirigimos a la página de productos
+            window.location.href = '/products';
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+  }
+</script> 

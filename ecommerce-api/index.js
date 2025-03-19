@@ -1,16 +1,32 @@
 const express = require("express");
 const { Server } = require("socket.io");
 const { engine } = require("express-handlebars");
+const mongoose = require("mongoose");
 const productsRouter = require("./src/routes/products");
 const cartsRouter = require("./src/routes/carts");
 const viewsRouter = require("./src/routes/views");
 const ProductService = require("./src/services/productService");
+const hbs = require("handlebars");
 
 const app = express();
 const PORT = 8080;
 
+// MongoDB connection
+mongoose
+  .connect("mongodb://127.0.0.1:27017/ecommerce")
+  .then(() => console.log("Conectado a MongoDB"))
+  .catch((err) => console.error("Error conectando a MongoDB:", err));
+
 // Handlebars configuration
-app.engine("handlebars", engine());
+app.engine(
+  "handlebars",
+  engine({
+    runtimeOptions: {
+      allowProtoPropertiesByDefault: true,
+      allowProtoMethodsByDefault: true,
+    },
+  })
+);
 app.set("view engine", "handlebars");
 app.set("views", "./src/views");
 
@@ -55,4 +71,32 @@ io.on("connection", (socket) => {
       socket.emit("error", error.message);
     }
   });
+});
+
+// Agregar helpers para Handlebars
+hbs.registerHelper("multiply", function (a, b) {
+  return a * b;
+});
+
+hbs.registerHelper("add", function (a, b) {
+  return a + b;
+});
+
+hbs.registerHelper("subtract", function (a, b) {
+  return a - b;
+});
+
+hbs.registerHelper("calculateTotal", function (products) {
+  return products.reduce((total, item) => {
+    return total + item.product.price * item.quantity;
+  }, 0);
+});
+
+hbs.registerHelper("json", function (context) {
+  return JSON.stringify(context, null, 2);
+});
+
+hbs.registerHelper("log", function (something) {
+  console.log(something);
+  return "";
 });

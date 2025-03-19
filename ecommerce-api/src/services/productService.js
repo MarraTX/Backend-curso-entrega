@@ -1,96 +1,98 @@
-const fs = require("fs");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
+const Product = require("../models/Product");
 
 class ProductService {
-  constructor() {
-    this.path = path.join(__dirname, "../../data/products.json");
-    this.products = [];
-    this.loadProducts();
-  }
+  async getAllProducts(options = {}) {
+    const { limit = 10, page = 1, sort, query = {} } = options;
 
-  loadProducts() {
+    // Agregar validación de sort
+    if (sort && !["asc", "desc"].includes(sort)) {
+      throw new Error('Sort debe ser "asc" o "desc"');
+    }
+
+    // Mejorar el manejo de query
+    const queryObject = {};
+    if (query.category) queryObject.category = query.category;
+    if (query.status !== undefined)
+      queryObject.status = query.status === "true";
+
     try {
-      const data = fs.readFileSync(this.path, "utf-8");
-      this.products = JSON.parse(data);
+      const result = await Product.paginate(queryObject, {
+        limit,
+        page,
+        sort: sort ? { price: sort === "asc" ? 1 : -1 } : undefined,
+        lean: true,
+      });
+
+      // Construir URLs con todos los parámetros
+      const baseUrl = "/api/products";
+      const queryString = new URLSearchParams({
+        limit: limit.toString(),
+        ...(sort && { sort }),
+        ...(query.category && { category: query.category }),
+        ...(query.status !== undefined && { status: query.status }),
+      }).toString();
+
+      return {
+        status: "success",
+        payload: result.docs,
+        totalPages: result.totalPages,
+        prevPage: result.prevPage,
+        nextPage: result.nextPage,
+        page: result.page,
+        hasPrevPage: result.hasPrevPage,
+        hasNextPage: result.hasNextPage,
+        prevLink: result.hasPrevPage
+          ? `${baseUrl}?${queryString}&page=${result.prevPage}`
+          : null,
+        nextLink: result.hasNextPage
+          ? `${baseUrl}?${queryString}&page=${result.nextPage}`
+          : null,
+      };
     } catch (error) {
-      this.products = [];
-      this.saveProducts();
+      return {
+        status: "error",
+        payload: [],
+        message: error.message,
+      };
     }
   }
 
-  saveProducts() {
-    fs.writeFileSync(this.path, JSON.stringify(this.products, null, 2));
-  }
-
-  getAllProducts(limit) {
-    if (limit) {
-      return this.products.slice(0, limit);
+  async getProductById(id) {
+    try {
+      return await Product.findById(id).lean();
+    } catch (error) {
+      throw new Error("Error al obtener el producto");
     }
-    return this.products;
   }
 
-  getProductById(id) {
-    return this.products.find((product) => product.id === id);
-  }
-
-  createProduct(productData) {
-    const {
-      title,
-      description,
-      code,
-      price,
-      stock,
-      category,
-      thumbnails = [],
-    } = productData;
-
-    // Validar campos obligatorios
-    if (!title || !description || !code || !price || !stock || !category) {
-      throw new Error("Todos los campos son obligatorios excepto thumbnails");
+  async createProduct(productData) {
+    try {
+      const newProduct = new Product(productData);
+      await newProduct.save();
+      return newProduct;
+    } catch (error) {
+      throw new Error("Error al crear el producto: " + error.message);
     }
-
-    const newProduct = {
-      id: uuidv4(),
-      title,
-      description,
-      code,
-      price,
-      status: true,
-      stock,
-      category,
-      thumbnails,
-    };
-
-    this.products.push(newProduct);
-    this.saveProducts();
-    return newProduct;
   }
 
-  updateProduct(id, updateData) {
-    const index = this.products.findIndex((product) => product.id === id);
-    if (index === -1) return null;
-
-    // Evitar modificar el id
-    const { id: _, ...updateFields } = updateData;
-
-    const updatedProduct = {
-      ...this.products[index],
-      ...updateFields,
-    };
-
-    this.products[index] = updatedProduct;
-    this.saveProducts();
-    return updatedProduct;
+  async updateProduct(id, updateData) {
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+        new: true,
+      }).lean();
+      return updatedProduct;
+    } catch (error) {
+      throw new Error("Error al actualizar el producto");
+    }
   }
 
-  deleteProduct(id) {
-    const index = this.products.findIndex((product) => product.id === id);
-    if (index === -1) return false;
-
-    this.products.splice(index, 1);
-    this.saveProducts();
-    return true;
+  async deleteProduct(id) {
+    try {
+      const result = await Product.findByIdAndDelete(id);
+      return result !== null;
+    } catch (error) {
+      throw new Error("Error al eliminar el producto");
+    }
   }
 }
 
