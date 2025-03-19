@@ -1,13 +1,22 @@
 const CartService = require("../services/cartService");
 const cartService = new CartService();
+const ProductService = require("../services/productService");
 
 class CartController {
   async createCart(req, res) {
     try {
       const newCart = await cartService.createCart();
-      res.status(201).json(newCart);
+      res.status(201).json({
+        status: "success",
+        payload: {
+          _id: newCart._id.toString(),
+        },
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({
+        status: "error",
+        error: error.message,
+      });
     }
   }
 
@@ -27,13 +36,39 @@ class CartController {
   async addProductToCart(req, res) {
     try {
       const { cid, pid } = req.params;
-      const updatedCart = await cartService.addProductToCart(cid, pid);
-      if (!updatedCart) {
-        return res.status(404).json({ error: "Carrito no encontrado" });
+      console.log("Controller: Intentando agregar producto:", {
+        cartId: cid,
+        productId: pid,
+      });
+
+      // Validar que el carrito existe
+      const cart = await cartService.getCartById(cid);
+      console.log("Controller: Cart found:", cart ? "Sí" : "No");
+
+      // Validar que el producto existe
+      const product = await ProductService.getProductById(pid);
+      console.log("Controller: Product found:", product ? "Sí" : "No");
+
+      if (!product) {
+        return res.status(404).json({
+          status: "error",
+          error: "Producto no encontrado",
+        });
       }
-      res.json(updatedCart);
+
+      const updatedCart = await cartService.addProductToCart(cid, pid);
+      console.log("Controller: Cart updated successfully");
+
+      return res.status(200).json({
+        status: "success",
+        payload: updatedCart,
+      });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      console.error("Controller Error:", error);
+      return res.status(404).json({
+        status: "error",
+        error: error.message,
+      });
     }
   }
 

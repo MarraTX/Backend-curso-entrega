@@ -1,27 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
-const productService = require("../services/productService");
+const ProductService = require("../services/productService");
 
 router.get("/", async (req, res) => {
   try {
     const { limit, page, sort, category, status } = req.query;
-
-    // Validar parámetros
-    if (sort && !["asc", "desc"].includes(sort)) {
-      return res.status(400).json({
-        status: "error",
-        message: 'Sort debe ser "asc" o "desc"',
-      });
-    }
-
-    const result = await productService.getAllProducts({
-      limit: parseInt(limit),
-      page: parseInt(page),
+    const options = {
+      limit: limit ? parseInt(limit) : 10,
+      page: page ? parseInt(page) : 1,
       sort,
-      query: { category, status },
-    });
+      query: {},
+    };
 
+    if (category) options.query.category = category;
+    if (status !== undefined) options.query.status = status === "true";
+
+    const result = await ProductService.getAllProducts(options);
     res.json(result);
   } catch (error) {
     res.status(500).json({

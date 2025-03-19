@@ -33,10 +33,10 @@ app.set("views", "./src/views");
 app.use(express.json());
 app.use(express.static("public"));
 
-// Routes
+// El orden es importante
+app.use("/api/carts", cartsRouter); // Primero las rutas de API
 app.use("/api/products", productsRouter);
-app.use("/api/carts", cartsRouter);
-app.use("/", viewsRouter);
+app.use("/", viewsRouter); // Después las rutas de vistas
 
 const httpServer = app.listen(PORT, () => {
   console.log(`Server corriendo en puerto ${PORT}`);

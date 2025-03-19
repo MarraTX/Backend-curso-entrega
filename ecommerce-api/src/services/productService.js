@@ -1,40 +1,43 @@
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
 
 class ProductService {
-  async getAllProducts(options = {}) {
-    const { limit = 10, page = 1, sort, query = {} } = options;
-
-    // Agregar validación de sort
-    if (sort && !["asc", "desc"].includes(sort)) {
-      throw new Error('Sort debe ser "asc" o "desc"');
-    }
-
-    // Mejorar el manejo de query
-    const queryObject = {};
-    if (query.category) queryObject.category = query.category;
-    if (query.status !== undefined)
-      queryObject.status = query.status === "true";
-
+  static async getAllProducts(options = {}) {
     try {
-      const result = await Product.paginate(queryObject, {
-        limit,
-        page,
+      const { limit = 10, page = 1, sort, query = {} } = options;
+
+      // Agregar validación de sort
+      if (sort && !["asc", "desc"].includes(sort)) {
+        throw new Error('Sort debe ser "asc" o "desc"');
+      }
+
+      // Mejorar el manejo de query
+      const queryObject = {};
+      if (query.category) queryObject.category = query.category;
+      if (query.status !== undefined)
+        queryObject.status = query.status === "true";
+
+      // Configurar las opciones de paginación para Mongoose
+      const paginateOptions = {
+        page: page,
+        limit: limit,
         sort: sort ? { price: sort === "asc" ? 1 : -1 } : undefined,
-        lean: true,
-      });
+        lean: true, // Esto asegura que obtenemos objetos planos de JavaScript
+      };
 
-      // Construir URLs con todos los parámetros
-      const baseUrl = "/api/products";
-      const queryString = new URLSearchParams({
-        limit: limit.toString(),
-        ...(sort && { sort }),
-        ...(query.category && { category: query.category }),
-        ...(query.status !== undefined && { status: query.status }),
-      }).toString();
+      // Realizar la consulta paginada
+      const result = await Product.paginate(queryObject, paginateOptions);
 
+      // Asegurarse de que cada documento tenga su _id
+      const docs = result.docs.map((doc) => ({
+        ...doc,
+        _id: doc._id.toString(), // Convertir el ObjectId a string
+      }));
+
+      // Formatear la respuesta
       return {
         status: "success",
-        payload: result.docs,
+        payload: docs,
         totalPages: result.totalPages,
         prevPage: result.prevPage,
         nextPage: result.nextPage,
@@ -42,30 +45,36 @@ class ProductService {
         hasPrevPage: result.hasPrevPage,
         hasNextPage: result.hasNextPage,
         prevLink: result.hasPrevPage
-          ? `${baseUrl}?${queryString}&page=${result.prevPage}`
+          ? `/products?page=${result.prevPage}&limit=${limit}`
           : null,
         nextLink: result.hasNextPage
-          ? `${baseUrl}?${queryString}&page=${result.nextPage}`
+          ? `/products?page=${result.nextPage}&limit=${limit}`
           : null,
       };
     } catch (error) {
-      return {
-        status: "error",
-        payload: [],
-        message: error.message,
-      };
+      throw new Error("Error al obtener los productos: " + error.message);
     }
   }
 
-  async getProductById(id) {
+  static async getProductById(id) {
     try {
-      return await Product.findById(id).lean();
+      // Verificar si el ID es válido para MongoDB
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error("ID de producto no válido");
+      }
+
+      const product = await Product.findById(id).lean();
+      if (!product) {
+        throw new Error("Producto no encontrado");
+      }
+      return product;
     } catch (error) {
-      throw new Error("Error al obtener el producto");
+      // Propagar el error específico
+      throw new Error(error.message);
     }
   }
 
-  async createProduct(productData) {
+  static async createProduct(productData) {
     try {
       const newProduct = new Product(productData);
       await newProduct.save();
@@ -75,7 +84,7 @@ class ProductService {
     }
   }
 
-  async updateProduct(id, updateData) {
+  static async updateProduct(id, updateData) {
     try {
       const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
         new: true,
@@ -86,12 +95,21 @@ class ProductService {
     }
   }
 
-  async deleteProduct(id) {
+  static async deleteProduct(id) {
     try {
       const result = await Product.findByIdAndDelete(id);
       return result !== null;
     } catch (error) {
       throw new Error("Error al eliminar el producto");
+    }
+  }
+
+  static async getUniqueCategories() {
+    try {
+      const categories = await Product.distinct("category");
+      return categories;
+    } catch (error) {
+      throw new Error("Error al obtener las categorías: " + error.message);
     }
   }
 }

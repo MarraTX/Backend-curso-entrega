@@ -1,18 +1,28 @@
-# E-commerce API 🛍️
+# E-commerce API
 
-API RESTful para la gestión de productos y carritos de compra, desarrollada con Node.js, Express, Handlebars y WebSocket.
+Una aplicación de comercio electrónico construida con Node.js, Express, MongoDB y Handlebars.
 
-## 📋 Requisitos Previos
+## Características
+
+- Catálogo de productos con paginación
+- Sistema de carrito de compras
+- Vista detallada de productos
+- Manejo de sesiones de carrito persistentes
+- Interfaz de usuario intuitiva
+- Actualización en tiempo real con Socket.io
+
+## Requisitos Previos
 
 - Node.js (v14 o superior)
-- npm (v6 o superior)
+- MongoDB (v4.4 o superior)
+- npm o yarn
 
-## 🚀 Instalación
+## Instalación
 
 1. Clonar el repositorio:
 
 ```bash
-git clone https://github.com/tu-usuario/ecommerce-api.git
+git clone <url-del-repositorio>
 cd ecommerce-api
 ```
 
@@ -22,7 +32,12 @@ cd ecommerce-api
 npm install
 ```
 
-3. Iniciar el servidor:
+3. Configurar MongoDB:
+
+- Asegúrate de tener MongoDB corriendo localmente en el puerto 27017
+- La base de datos se creará automáticamente con el nombre 'ecommerce'
+
+4. Iniciar el servidor:
 
 ```bash
 npm run dev
@@ -30,146 +45,163 @@ npm run dev
 
 El servidor estará corriendo en `http://localhost:8080`
 
+## Estructura del Proyecto
+
 ## 🔗 Endpoints y Vistas
 
 ### 🌐 Vistas con Handlebars
 
 | Ruta                | Descripción                        |
 | ------------------- | ---------------------------------- |
-| `/`                 | Vista estática de productos        |
+| `/products`         | Vista de productos con paginación  |
+| `/products/:pid`    | Vista detallada de un producto     |
+| `/carts/:cid`       | Vista del carrito específico       |
 | `/realtimeproducts` | Vista en tiempo real con WebSocket |
 
 ### 📦 Productos API
 
-| Método | Endpoint             | Descripción                 |
-| ------ | -------------------- | --------------------------- |
-| GET    | `/api/products`      | Obtener todos los productos |
-| GET    | `/api/products/:pid` | Obtener producto por ID     |
-| POST   | `/api/products`      | Crear nuevo producto        |
-| PUT    | `/api/products/:pid` | Actualizar producto por ID  |
-| DELETE | `/api/products/:pid` | Eliminar producto           |
+| Método | Endpoint             | Descripción             | Query Params             |
+| ------ | -------------------- | ----------------------- | ------------------------ |
+| GET    | `/api/products`      | Obtener productos       | limit, page, sort, query |
+| GET    | `/api/products/:pid` | Obtener producto por ID | -                        |
+| POST   | `/api/products`      | Crear nuevo producto    | -                        |
+| PUT    | `/api/products/:pid` | Actualizar producto     | -                        |
+| DELETE | `/api/products/:pid` | Eliminar producto       | -                        |
 
-#### Ejemplo de body para crear un producto:
+#### Query Params para GET /api/products
+
+- `limit`: Número de elementos por página (default: 10)
+- `page`: Número de página (default: 1)
+- `sort`: Ordenamiento por precio ('asc' o 'desc')
+- `query`: Filtrar por categoría o disponibilidad
+
+#### Ejemplo de respuesta paginada:
 
 ```json
 {
-  "title": "Nombre del producto",
-  "description": "Descripción del producto",
-  "code": "ABC123",
-  "price": 999.99,
-  "stock": 100,
-  "category": "Categoría",
-  "thumbnails": ["url1.jpg", "url2.jpg"]
+    "status": "success",
+    "payload": [...productos],
+    "totalPages": 5,
+    "prevPage": 1,
+    "nextPage": 3,
+    "page": 2,
+    "hasPrevPage": true,
+    "hasNextPage": true,
+    "prevLink": "/api/products?page=1",
+    "nextLink": "/api/products?page=3"
 }
 ```
 
 ### 🛒 Carritos API
 
-| Método | Endpoint                       | Descripción                 |
-| ------ | ------------------------------ | --------------------------- |
-| POST   | `/api/carts`                   | Crear nuevo carrito         |
-| GET    | `/api/carts/:cid`              | Obtener carrito por ID      |
-| POST   | `/api/carts/:cid/product/:pid` | Agregar producto al carrito |
+| Método | Endpoint                        | Descripción                        |
+| ------ | ------------------------------- | ---------------------------------- |
+| POST   | `/api/carts`                    | Crear nuevo carrito                |
+| GET    | `/api/carts/:cid`               | Obtener carrito por ID             |
+| POST   | `/api/carts/:cid/products/:pid` | Agregar producto al carrito        |
+| DELETE | `/api/carts/:cid/products/:pid` | Eliminar producto del carrito      |
+| PUT    | `/api/carts/:cid`               | Actualizar carrito completo        |
+| PUT    | `/api/carts/:cid/products/:pid` | Actualizar cantidad de un producto |
+| DELETE | `/api/carts/:cid`               | Eliminar carrito                   |
 
-## 📁 Estructura de Archivos
+### 🛒 Funcionalidades del Carrito
 
-```
-ecommerce-api/
-├── data/
-│   ├── products.json
-│   └── carts.json
-├── public/
-│   └── js/
-├── src/
-│   ├── controllers/
-│   │   ├── productController.js
-│   │   └── cartController.js
-│   ├── models/
-│   ├── routes/
-│   │   ├── products.js
-│   │   ├── carts.js
-│   │   └── views.js
-│   ├── views/
-│   │   ├── layouts/
-│   │   │   └── main.handlebars
-│   │   ├── home.handlebars
-│   │   └── realTimeProducts.handlebars
-│   └── services/
-│       ├── productService.js
-│       └── cartService.js
-├── index.js
-└── package.json
-```
+- Visualización de productos en el carrito con detalles completos
+- Modificación de cantidades con botones + y -
+- Cálculo automático de subtotales y total
+- Botón "Seguir Comprando" para volver a productos
+- Botón "Finalizar Compra" con confirmación
+- Eliminación individual de productos
+- Vaciado completo del carrito
+- Persistencia del ID del carrito en localStorage
 
-## 🛠️ Tecnologías Utilizadas
+### 📊 Ejemplos de Respuestas
 
-- **Express.js** - Framework web
-- **Express Handlebars** - Motor de plantillas
-- **Socket.io** - Comunicación en tiempo real
-- **UUID** - Generación de IDs únicos
-- **Nodemon** - Desarrollo con recarga automática
+#### Producto
 
-## 🔌 WebSocket
-
-El proyecto implementa WebSocket para actualizaciones en tiempo real en la vista `/realtimeproducts`. Los eventos disponibles son:
-
-- `connection` - Cliente conectado
-- `products` - Actualización de lista de productos
-- `newProduct` - Crear nuevo producto
-- `deleteProduct` - Eliminar producto
-- `error` - Manejo de errores
-
-### Ejemplo de uso con WebSocket:
-
-```javascript
-// Cliente
-const socket = io();
-
-// Escuchar actualizaciones de productos
-socket.on("products", (products) => {
-  // Actualizar UI
-});
-
-// Enviar nuevo producto
-socket.emit("newProduct", productData);
-
-// Eliminar producto
-socket.emit("deleteProduct", productId);
+```json
+{
+  "_id": "...",
+  "title": "Smartphone XYZ",
+  "description": "Último modelo",
+  "code": "PHONE123",
+  "price": 999.99,
+  "status": true,
+  "stock": 50,
+  "category": "Smartphones",
+  "thumbnails": ["url1.jpg", "url2.jpg"]
+}
 ```
 
-## 📝 Handlebars Views
+#### Carrito
 
-### Home View (`/`)
+```json
+{
+  "_id": "...",
+  "products": [
+    {
+      "product": {
+        "_id": "...",
+        "title": "Smartphone XYZ",
+        "price": 999.99
+      },
+      "quantity": 2
+    }
+  ]
+}
+```
 
-Vista estática que muestra la lista de productos actual.
+## 🚨 Manejo de Errores
 
-### RealTime Products View (`/realtimeproducts`)
+El API devuelve los siguientes códigos de estado:
 
-Vista dinámica que incluye:
+- 200: Éxito
+- 201: Creado exitosamente
+- 400: Error en la solicitud
+- 404: Recurso no encontrado
+- 500: Error interno del servidor
 
-- Lista de productos en tiempo real
-- Formulario para agregar productos
-- Botones para eliminar productos
-- Actualizaciones automáticas vía WebSocket
+Ejemplo de respuesta de error:
 
-## 💾 Persistencia
+```json
+{
+  "status": "error",
+  "message": "Descripción del error"
+}
+```
 
-Los datos se almacenan en archivos JSON:
+## 💾 Configuración de MongoDB
 
-- `data/products.json` - Almacena los productos
-- `data/carts.json` - Almacena los carritos
+1. Asegúrate de tener MongoDB instalado localmente
+2. El servidor debe estar corriendo en `mongodb://127.0.0.1:27017`
+3. La base de datos se creará automáticamente con el nombre `ecommerce`
+4. Las colecciones que se crearán son:
+   - `products`
+   - `carts`
 
-## 📜 Scripts Disponibles
+Para verificar la conexión:
 
-| Comando       | Descripción                                    |
-| ------------- | ---------------------------------------------- |
-| `npm start`   | Inicia el servidor en modo producción          |
-| `npm run dev` | Inicia el servidor con nodemon para desarrollo |
+1. Abre MongoDB Compass
+2. Conecta a `mongodb://localhost:27017`
+3. Deberías ver la base de datos `ecommerce`
 
-## 📌 Notas
+## 🧪 Pruebas
 
-- Las vistas se renderizan usando Handlebars
-- La vista `/realtimeproducts` se actualiza automáticamente mediante WebSocket
-- Todos los campos son obligatorios para crear un producto, excepto `thumbnails`
-- Los IDs se generan automáticamente usando UUID
-- El status de los productos es `true` por defecto
+Para probar el sistema:
+
+1. Crear productos:
+
+   - Usar Postman o cURL para crear varios productos
+   - Verificar en MongoDB Compass
+
+2. Probar el carrito:
+
+   - Agregar productos al carrito
+   - Modificar cantidades
+   - Eliminar productos
+   - Finalizar compra
+
+3. Probar filtros y paginación:
+   - Usar diferentes combinaciones de query params
+   - Probar ordenamiento ascendente y descendente
+   - Verificar la paginación

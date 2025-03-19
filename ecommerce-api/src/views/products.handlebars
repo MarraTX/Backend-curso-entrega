@@ -1,51 +1,51 @@
 <div class="products-container">
   <h1>Productos</h1>
 
+  <div class="filters">
+    <select id="categoryFilter" onchange="filterByCategory(this.value)">
+      <option value="">Todas las categorías</option>
+      {{#each categories}}
+        <option value="{{this}}" {{#if (lookup ../selectedCategory this)}}selected{{/if}}>
+          {{this}}
+        </option>
+      {{/each}}
+    </select>
+  </div>
+
   <div class="products-grid">
     {{#each products}}
       <div class="product-card">
         <h2>{{this.title}}</h2>
         <p class="price">${{this.price}}</p>
         <p class="category">{{this.category}}</p>
+        <p class="debug-id" style="display: none;">ID: {{this._id}}</p>
 
-        {{! Botón para ver detalles }}
-        <a href="/products/{{this._id}}" class="btn-details">Ver Detalles</a>
-
-        {{! Botón para agregar al carrito directamente }}
-        <button onclick="addToCart('{{this._id}}')" class="btn-add-cart">
-          Agregar al Carrito
-        </button>
+        {{#if this._id}}
+          <a href="/products/{{this._id}}" class="btn-details">Ver Detalles</a>
+          <button onclick="addToCart('{{this._id}}')" class="btn-add-cart">
+            Agregar al Carrito
+          </button>
+        {{else}}
+          <p class="error">ID no disponible</p>
+        {{/if}}
       </div>
     {{/each}}
   </div>
 
-  {{! Paginación }}
-  <div class="pagination">
-    {{#if pagination.hasPrevPage}}
-      <a href="{{pagination.prevLink}}" class="page-link">&laquo; Anterior</a>
-    {{/if}}
+  {{#if pagination}}
+    <div class="pagination">
+      {{#if pagination.hasPrevPage}}
+        <a href="{{pagination.prevLink}}" class="page-link">&laquo; Anterior</a>
+      {{/if}}
 
-    <span class="current-page">Página {{pagination.page}}</span>
+      <span class="current-page">Página {{pagination.page}}</span>
 
-    {{#if pagination.hasNextPage}}
-      <a href="{{pagination.nextLink}}" class="page-link">Siguiente &raquo;</a>
-    {{/if}}
-  </div>
+      {{#if pagination.hasNextPage}}
+        <a href="{{pagination.nextLink}}" class="page-link">Siguiente &raquo;</a>
+      {{/if}}
+    </div>
+  {{/if}}
 </div>
-
-<script>
-  async function addToCart(productId) { try { let cartId =
-  localStorage.getItem('cartId'); if (!cartId) { const cartResponse = await
-  fetch('/api/carts', { method: 'POST' }); if (!cartResponse.ok) { throw new
-  Error('Error al crear el carrito'); } const newCart = await
-  cartResponse.json(); cartId = newCart._id; localStorage.setItem('cartId',
-  cartId); } const response = await
-  fetch(`/api/carts/${cartId}/product/${productId}`, { method: 'POST' }); if
-  (response.ok) { alert('Producto agregado al carrito'); window.location.href =
-  `/carts/${cartId}`; } else { const error = await response.json(); throw new
-  Error(error.error || 'Error al agregar al carrito'); } } catch (error) {
-  alert('Error: ' + error.message); } }
-</script>
 
 <style>
   .products-container { padding: 20px; } .products-grid { display: grid;
@@ -59,4 +59,43 @@
   justify-content: center; align-items: center; gap: 10px; } .page-link {
   padding: 8px 16px; background-color: #007bff; color: white; text-decoration:
   none; border-radius: 4px; } .current-page { padding: 8px 16px; }
+
+  .filters {
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .filters select {
+    padding: 8px 16px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+  }
+
+  .filters select:hover {
+    border-color: #007bff;
+  }
 </style>
+
+<script src="/js/cart.js"></script>
+<script>
+function filterByCategory(category) {
+  // Obtener los parámetros actuales de la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Actualizar o eliminar el parámetro de categoría
+  if (category) {
+    urlParams.set('category', category);
+  } else {
+    urlParams.delete('category');
+  }
+  
+  // Mantener la página en 1 al cambiar el filtro
+  urlParams.set('page', '1');
+  
+  // Redirigir a la nueva URL con los filtros
+  window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+}
+</script>

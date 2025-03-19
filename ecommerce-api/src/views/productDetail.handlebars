@@ -6,7 +6,7 @@
       {{#if product.thumbnails.length}}
         <div class="product-images">
           {{#each product.thumbnails}}
-            <img src="{{this}}" alt="{{../product.title}}" class="product-image">
+            <img src="/img/{{this}}" alt="{{../product.title}}" class="product-image">
           {{/each}}
         </div>
       {{/if}}
@@ -27,42 +27,6 @@
     </div>
   </div>
 </div>
-
-<script>
-async function addToCart(productId) {
-    try {
-        let cartId = localStorage.getItem('cartId');
-        
-        if (!cartId) {
-            const cartResponse = await fetch('/api/carts', {
-                method: 'POST'
-            });
-            
-            if (!cartResponse.ok) {
-                throw new Error('Error al crear el carrito');
-            }
-            
-            const newCart = await cartResponse.json();
-            cartId = newCart._id;
-            localStorage.setItem('cartId', cartId);
-        }
-        
-        const response = await fetch(`/api/carts/${cartId}/product/${productId}`, {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            alert('Producto agregado al carrito');
-            window.location.href = `/carts/${cartId}`;
-        } else {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al agregar al carrito');
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-</script>
 
 <style>
 .product-detail-container {
@@ -142,4 +106,6 @@ async function addToCart(productId) {
         grid-template-columns: 1fr;
     }
 }
-</style> 
+</style>
+
+<script src="/js/cart.js"></script> 
